@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  firstName String
+  lastName  String
+  email     String   @unique
+  age       Int
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile   profile?
+
+
+  writePosts Post[]   @relation("writtenby")
+  favoritePosts Post[]  @relation("favoritedby")
+
+  comments  Comment[]
+
+
+  @@unique([firstName, lastName])
+  @@index([email])
+}
+
+model profile {
+  id        String   @id @default(uuid()) @db.Uuid
+  bio       String
+  userId    String   @unique @db.Uuid
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id        String   @id @default(uuid()) @db.Uuid
+  title     String
+  content   String
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  autherId  String   @db.Uuid
+  writtenby User     @relation("writtenby", fields: [autherId], references: [id])
+
+  authid    String   @db.Uuid
+  favoritedby User   @relation("favoritedby", fields: [authid], references: [id])
+
+ comments  Comment[]
+}
+
+model Comment {
+  id        String   @id @default(uuid()) @db.Uuid
+  content   String
+  postId    String   @db.Uuid
+  userId    String   @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post      Post     @relation(fields: [postId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
